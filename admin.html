@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>لوحة تفعيلات FusionEra</title>
+<style>
+:root{--p:#035dcd;--ok:#129d4f;--bad:#c22;--warn:#b60}
+*{box-sizing:border-box;font-family:Tahoma,sans-serif}
+body{background:#f7f7f7;margin:0;padding:24px;color:#222}
+.card{background:#fff;border-radius:10px;box-shadow:0 2px 10px rgba(0,0,0,.06);padding:20px;margin-bottom:20px}
+h1{font-size:20px;margin:0 0 6px}.muted{color:#666;font-size:13px}
+label{display:block;font-size:13px;margin:12px 0 4px;color:#666}
+input,select{width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;font-size:14px}
+.row{display:flex;gap:10px;flex-wrap:wrap}.row>*{flex:1;min-width:140px}
+button{cursor:pointer;border:0;border-radius:6px;padding:10px 18px;font-size:14px;font-weight:bold;color:#fff;background:var(--p);margin-top:14px}
+button.gray{background:#888}button.red{background:var(--bad)}
+table{width:100%;border-collapse:collapse;font-size:13px;margin-top:10px}
+th,td{padding:8px;border-bottom:1px solid #eee;text-align:right;white-space:nowrap}th{background:#f0f4fa}
+.badge{padding:2px 10px;border-radius:10px;font-size:12px;color:#fff}
+.badge.active{background:var(--ok)}.badge.suspended{background:var(--warn)}
+#msg{margin-top:12px;font-size:13px;min-height:18px}.err{color:var(--bad)}.good{color:var(--ok)}
+code{background:#f0f4fa;padding:2px 6px;border-radius:4px;font-size:12px}
+</style>
+</head>
+<body>
+
+<div class="card">
+  <h1>🔓 لوحة تفعيلات FusionEra</h1>
+  <div class="muted">
+    بتعدل مباشرة على <code>licenses.json</code> في الريبو عبر GitHub API.
+    محتاج <b>Personal Access Token</b> واحد فقط — اعمله من:
+    <a href="https://github.com/settings/personal-access-tokens/new" target="_blank">GitHub → Fine-grained tokens</a>
+    واختار صلاحية <b>Contents: Read and write</b> على الريبو ده بس.
+  </div>
+</div>
+
+<div class="card" id="setup">
+  <label>GitHub Token (fine-grained — صلاحية Contents: RW على هذا الريبو فقط)</label>
+  <input id="token" type="password" placeholder="github_pat_••••••••••">
+  <button onclick="login()">دخول</button>
+  <span id="state" class="muted"></span>
+</div>
+
+<div class="card" id="addForm" style="display:none">
+  <h2 style="font-size:16px;margin:0 0 4px">➕ تفعيل مدونة</h2>
+  <div class="row">
+    <div><label>Blog ID *</label><input id="a_blogid" placeholder="8176772930665578124"></div>
+    <div><label>إيميل العميل</label><input id="a_email" placeholder="client@gmail.com"></div>
+    <div><label>الخطة</label>
+      <select id="a_plan"><option value="basic">basic</option><option value="pro" selected>pro</option><option value="lifetime">lifetime</option></select>
+    </div>
+  </div>
+  <button onclick="activate()">تفعيل / تحديث</button>
+</div>
+
+<div class="card" id="listCard" style="display:none">
+  <h2 style="font-size:16px;margin:0 0 4px">📋 التفعيلات الحالية</h2>
+  <div class="muted" id="total"></div>
+  <table>
+    <thead><tr><th>Blog ID</th><th>الإيميل</th><th>الخطة</th><th>التاريخ</th><th>القايمة</th><th>إجراءات</th></tr></thead>
+    <tbody id="rows"></tbody>
+  </table>
+  <div class="muted" style="margin-top:10px">
+    بعد الحفظ بيتعمل commit تلقائي على الريبو. عايز التغيير يوصل فورًا للعملاء؟
+    <a href="https://purge.jsdelivr.net/gh/Ahmed-Hamed-216/seplus_licenses@main/licenses.json" target="_blank">امسح كاش الـ CDN</a>
+  </div>
+</div>
+
+<div id="msg"></div>
+
+<script>
+const OWNER = 'Ahmed-Hamed-216';
+const REPO  = 'seplus_licenses';
+const BRANCH = 'main';
+const FILE  = 'licenses.json';
+const API   = 'https://api.github.com/repos/' + OWNER + '/' + REPO + '/contents/' + FILE;
+
+let TOKEN = sessionStorage.getItem('fe_token') || '';
+let db = null, sha = null;
+const $ = id => document.getElementById(id);
+
+if (TOKEN) login(true);
+
+async function login(silent) {
+  if (!silent) TOKEN = $('token').value.trim();
+  if (!TOKEN) return say('حط الـ Token الأول', true);
+  // جرب نقرأ الملف — لو الـ token عنده صلاحية الكتابة هنكشفها وقت الحفظ
+  await load();
+  sessionStorage.setItem('fe_token', TOKEN);
+  $('setup').style.display = 'none';
+  $('addForm').style.display = '';
+  $('listCard').style.display = '';
+  say(silent ? '' : '✓ اتصلت — تعديلاتك هتتحفظ على الريبو مباشرة');
+}
+
+async function load() {
+  const r = await fetch(API + '?ref=' + BRANCH, { headers: gh() });
+  if (!r.ok) return say('فشل قراءة الملف: ' + r.status, true);
+  const j = await r.json();
+  sha = j.sha;
+  db = JSON.parse(decodeURIComponent(escape(atob(j.content.replace(/\n/g, '')))));
+  renderTable();
+}
+
+function gh() { return { Authorization: 'Bearer ' + TOKEN, Accept: 'application/vnd.github+json' }; }
+
+function renderTable() {
+  const act = db.active || [], sus = db.suspended || [];
+  $('total').textContent = 'مفعّلة: ' + act.length + ' — موقوفة: ' + sus.length;
+  const row = (x, list) => `
+    <tr>
+      <td>${esc(x.blogid)}</td><td>${esc(x.email || '')}</td><td>${esc(x.plan || '')}</td><td>${esc(x.date || '')}</td>
+      <td><span class="badge ${list === 'active' ? 'active' : 'suspended'}">${list === 'active' ? 'مفعّلة' : 'موقوفة'}</span></td>
+      <td>
+        <button class="gray" style="margin:0;padding:4px 10px" onclick="move('${x.blogid}')">${list === 'active' ? 'إيقاف' : 'تشغيل'}</button>
+        <button class="red" style="margin:0;padding:4px 10px" onclick="remove('${x.blogid}')">حذف</button>
+      </td>
+    </tr>`;
+  $('rows').innerHTML = act.map(x => row(x, 'active')).join('') + sus.map(x => row(x, 'suspended')).join('');
+}
+
+async function save(commitMsg) {
+  const body = {
+    message: commitMsg,
+    content: btoa(unescape(encodeURIComponent(JSON.stringify(db, null, 2)))),
+    branch: BRANCH, sha
+  };
+  const r = await fetch(API, { method: 'PUT', headers: gh(), body: JSON.stringify(body) });
+  if (!r.ok) {
+    const e = await r.json().catch(() => ({}));
+    say('فشل الحفظ: ' + r.status + ' ' + (e.message || '') +
+      (r.status === 403 ? ' — الـ Token مفيهوش صلاحية Contents: write' : ''), true);
+    return false;
+  }
+  sha = (await r.json()).content.sha;
+  return true;
+}
+
+async function activate() {
+  const blogid = $('a_blogid').value.replace(/\D/g, '');
+  if (!blogid) return say('اكتب Blog ID', true);
+  db.active = db.active || [];
+  const exist = db.active.findIndex(x => String(x.blogid) === blogid);
+  const item = { blogid, email: $('a_email').value.trim(), plan: $('a_plan').value, date: new Date().toISOString().slice(0, 10) };
+  if (exist >= 0) db.active[exist] = item; else db.active.push(item);
+  if (await save('activate ' + blogid)) {
+    say('✓ اتسجل على GitHub — التغيير لايف خلال دقايق');
+    $('a_blogid').value = ''; renderTable();
+  }
+}
+
+async function move(blogid) {
+  const from = db.active.findIndex(x => String(x.blogid) === blogid);
+  if (from >= 0) {
+    db.suspended = db.suspended || [];
+    db.suspended.push(db.active.splice(from, 1)[0]);
+  } else {
+    const i = db.suspended.findIndex(x => String(x.blogid) === blogid);
+    if (i >= 0) db.active.push(db.suspended.splice(i, 1)[0]);
+  }
+  if (await save('toggle ' + blogid)) { say('✓ اتغيرت الحالة'); renderTable(); }
+}
+
+async function remove(blogid) {
+  if (!confirm('حذف ' + blogid + ' نهائيًا؟')) return;
+  db.active = (db.active || []).filter(x => String(x.blogid) !== blogid);
+  db.suspended = (db.suspended || []).filter(x => String(x.blogid) !== blogid);
+  if (await save('remove ' + blogid)) { say('✓ اتحذف'); renderTable(); }
+}
+
+function say(t, err) { $('msg').innerHTML = '<span class="' + (err ? 'err' : 'good') + '">' + t + '</span>'; }
+function esc(s) { return String(s ?? '').replace(/[<>&"]/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[c])); }
+</script>
+</body>
+</html>
