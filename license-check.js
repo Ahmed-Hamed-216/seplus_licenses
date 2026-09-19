@@ -7,9 +7,9 @@
  *   4) spscxcb (شاشة "لماذا توقف المدونة؟")      -> معطّل داخل البايلود
  * التركيب في القالب:
  *   <script>window.FE_LIC={blogid:"رقم-مدونتك"};</script>   (اختياري — للتسجيل فقط)
- *   <script src='https://ahmed-hamed-216.github.io/seplus_licenses/license-check.js?v=4'></script>
+ *   <script src='https://ahmed-hamed-216.github.io/seplus_licenses/license-check.js?v=5'></script>
  *   مهم: اكتب وسم السكربت بإغلاق صريح ></script> وليس <script ... />
- * التفعيل تلقائي لأي مدونة — لا توجد قائمة مرخصة (v4: معطّل blba/spscx00cb أيضًا).
+ * التفعيل تلقائي لأي مدونة — لا توجد قائمة مرخصة (v5: تعطيل بالإسناد البسيط — بدون تجميد يكسر تحليل سكربت القالب).
  */
 (function () {
   var STORG = 'storg';
@@ -23,27 +23,24 @@
   // 1) الطريق الأساسي: ازرع البايلود قبل ما LazMin يقرأ sessionStorage
   try { sessionStorage.setItem(STORG, PAYLOAD); } catch (e) {}
 
-  // 2) درع: لو القالب جاب بايلود البائع (كاش قديم أو التخزين معطل) نستبدل sp_db
-  //    بتعريف غير قابل للاستبدال — يعمل سواء سبق أو لحقه سكربت القالب.
-  function ourSpDb() { try { (0, eval)(PAYLOAD); } catch (e) { console.error('[seplus_licenses] payload error', e); } }
-  try {
-    Object.defineProperty(window, 'sp_db', { value: ourSpDb, writable: false, configurable: false });
-  } catch (e) { try { window.sp_db = ourSpDb; } catch (e2) {} }
-
-  // 3) اعزل أي استجابة متأخرة من صفحات البائع
-  //    blba: القناة السادسة — دالة في سكربت القالب نفسه بتسحب صفحة التفعيلات
-  //    بكال باك spsccx00cb وتمسح الصفحة لو BlogID مش في قايمة البائع.
-  //    التجكيد قبل سكربت القالب يخلي الإسناد blba=()=>{...} بيفشل بصمت (sloppy mode)
-  //    فتفضل نسختنا الفارغة شغالة مهما كان ترتيب السكربتات.
+  // 2) + 3) تعطيل قنوات البائع بإسناد بسيط (بدون Object.defineProperty!)
+  //    سبب: تجميد sp_db بـ defineProperty كان يمنع المتصفح من تحليل سكربت
+  //    القالب كله (function declaration تصطدم بخاصية non-configurable ->
+  //    "Identifier already declared") فيموت كل شيء: الصور والقوائم والفوتر.
+  //    الإسناد البسيط يتم فورًا وعند DOMContentLoaded — قبل أي رد JSONP من البائع.
+  function ourSpDb() { try { eval(PAYLOAD); } catch (e) { console.error('[seplus_licenses] payload error', e); } }
+  function neutralize() {
+    try { window.sp_db = ourSpDb; } catch (e) {}
+    try { window.blba = noop; } catch (e) {}
+    try { window.spscx00cb = noop; } catch (e) {}
+    try { window.cprF = noop; } catch (e) {}
+    try { window.spscxcb = noop; } catch (e) {}
+  }
   function noop() {}
-  try {
-    Object.defineProperty(window, 'blba', { value: noop, writable: false, configurable: false });
-  } catch (e) { try { window.blba = noop; } catch (e2) {} }
-  try {
-    Object.defineProperty(window, 'spscx00cb', { value: noop, writable: false, configurable: false });
-  } catch (e) { try { window.spscx00cb = noop; } catch (e2) {} }
-  try { window.cprF = noop; } catch (e) {}
-  try { window.spscxcb = noop; } catch (e) {}
+  neutralize();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', neutralize);
+  }
 
   try { console.info('[seplus_licenses] licensed OK for', blogId() || '(no FE_LIC)'); } catch (e) {}
 })();
