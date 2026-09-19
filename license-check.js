@@ -13,8 +13,9 @@
   'use strict';
 
   var cfg = window.FE_LIC || {};
+  var BUST = '?v=' + Date.now(); // كل طلب بعنوان فريد = مفيش كاش قديم أبدًا
   var DATA_URL  = 'https://ahmed-hamed-216.github.io/seplus_licenses/licenses.json';
-  var FALLBACK  = 'https://cdn.jsdelivr.net/gh/Ahmed-Hamed-216/seplus_licenses@main/licenses.json';
+  var FALLBACK  = 'https://raw.githubusercontent.com/Ahmed-Hamed-216/seplus_licenses/main/licenses.json';
   var CACHE_HOURS = 2;
 
   /* ---- BlogID ---- */
@@ -35,10 +36,10 @@
   } catch (e) {}
 
   /* ---- جلب البيانات ---- */
-  fetch(DATA_URL, { cache: 'no-cache' })
+  fetch(DATA_URL + BUST, { cache: 'no-cache' })
     .then(function (r) { if (!r.ok) throw 0; return r.json(); })
     .catch(function () {
-      return fetch(FALLBACK, { cache: 'no-cache' }).then(function (r) {
+      return fetch(FALLBACK + BUST, { cache: 'no-cache' }).then(function (r) {
         if (!r.ok) throw 0; return r.json();
       });
     })
