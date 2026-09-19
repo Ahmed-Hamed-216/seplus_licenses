@@ -7,9 +7,9 @@
  *   4) spscxcb (شاشة "لماذا توقف المدونة؟")      -> معطّل داخل البايلود
  * التركيب في القالب:
  *   <script>window.FE_LIC={blogid:"رقم-مدونتك"};</script>   (اختياري — للتسجيل فقط)
- *   <script src='https://ahmed-hamed-216.github.io/seplus_licenses/license-check.js?v=8'></script>
+ *   <script src='https://ahmed-hamed-216.github.io/seplus_licenses/license-check.js?v=9'></script>
  *   مهم: اكتب وسم السكربت بإغلاق صريح ></script> وليس <script ... />
- * التفعيل تلقائي لأي مدونة (v8: علامة إصدار في الكونسول + شفاء ذاتي).
+ * التفعيل تلقائي لأي مدونة (v9: إزالة تجميد blba — القالب يتحلل نظيفًا بدون SyntaxError).
  */
 (function () {
   var STORG = 'storg';
@@ -24,14 +24,17 @@
   try { sessionStorage.setItem(STORG, PAYLOAD); } catch (e) {}
 
   // 2) + 3) تعطيل قنوات البائع
-  //    قاعدة ذهبية: sp_db مُعلنة بـ function declaration في سكربت القالب —
-  //    تجميدها بـ defineProperty يمنع المتصفح من تحليل السكربت كله
-  //    ("Identifier already declared") فيموت كل شيء. لذلك تُترك إسنادًا بسيطًا.
-  //    أما blba/spscx00cb/cprF/spscxcb فتُنشأة بالإسناد — تُجمَّد بأمان،
-  //    فأي إعادة تسجيل من القالب تفشل بصمت وتبقى نسختنا الفارغة.
+  //    قاعدة حاسمة: لا تُجمَّد اسمًا يعلنه سكربت القالب بـ function declaration
+  //    (sp_db و blba كلاهما declarations — تجميدهما يقتل تحليل سكربت القالب
+  //    بخطأ "Identifier already declared" كما ثبت عمليًا في كروم).
+  //    المجمّدة هنا: spscx00cb/cprF/spscxcb — تُنشأ بالإسناد فقط (window["..."]=)
+  //    فإعادة تسجيلها من القالب أو البايلود تفشل بصمت وتبقى نسختنا الفارغة.
+  //    blba تُترك للقالب: هي فقط تطلب صفحة التفعيلات، وردّها يصل إلى
+  //    spscx00cb المجمّدة → noop → لا قتل إطلاقًا.
+  //    sp_db تُستبدل بالإسناد البسيط (تحميل + DOMContentLoaded) — بدون تجميد.
   function ourSpDb() { try { eval(PAYLOAD); } catch (e) { console.error('[seplus_licenses] payload error', e); } }
   function noop() {}
-  ['blba', 'spscx00cb', 'spscxcb', 'cprF'].forEach(function (name) {
+  ['spscx00cb', 'spscxcb', 'cprF'].forEach(function (name) {
     try {
       Object.defineProperty(window, name, { value: noop, writable: false, configurable: false });
     } catch (e) { try { window[name] = noop; } catch (e2) {} }
@@ -69,5 +72,5 @@
   setTimeout(heal, 1200);
   setTimeout(heal, 3500);
 
-  try { console.info('[seplus_licenses] v8 active —', blogId() || '(no FE_LIC)'); } catch (e) {}
+  try { console.info('[seplus_licenses] v9 active —', blogId() || '(no FE_LIC)'); } catch (e) {}
 })();
