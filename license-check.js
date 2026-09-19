@@ -7,9 +7,9 @@
  *   4) spscxcb (شاشة "لماذا توقف المدونة؟")      -> معطّل داخل البايلود
  * التركيب في القالب:
  *   <script>window.FE_LIC={blogid:"رقم-مدونتك"};</script>   (اختياري — للتسجيل فقط)
- *   <script src='https://ahmed-hamed-216.github.io/seplus_licenses/license-check.js?v=5'></script>
+ *   <script src='https://ahmed-hamed-216.github.io/seplus_licenses/license-check.js?v=6'></script>
  *   مهم: اكتب وسم السكربت بإغلاق صريح ></script> وليس <script ... />
- * التفعيل تلقائي لأي مدونة — لا توجد قائمة مرخصة (v5: تعطيل بالإسناد البسيط — بدون تجميد يكسر تحليل سكربت القالب).
+ * التفعيل تلقائي لأي مدونة (v6: تجميد آمن لقنوات القتل + إسناد sp_db بدون تجميد).
  */
 (function () {
   var STORG = 'storg';
@@ -23,20 +23,22 @@
   // 1) الطريق الأساسي: ازرع البايلود قبل ما LazMin يقرأ sessionStorage
   try { sessionStorage.setItem(STORG, PAYLOAD); } catch (e) {}
 
-  // 2) + 3) تعطيل قنوات البائع بإسناد بسيط (بدون Object.defineProperty!)
-  //    سبب: تجميد sp_db بـ defineProperty كان يمنع المتصفح من تحليل سكربت
-  //    القالب كله (function declaration تصطدم بخاصية non-configurable ->
-  //    "Identifier already declared") فيموت كل شيء: الصور والقوائم والفوتر.
-  //    الإسناد البسيط يتم فورًا وعند DOMContentLoaded — قبل أي رد JSONP من البائع.
+  // 2) + 3) تعطيل قنوات البائع
+  //    قاعدة ذهبية: sp_db مُعلنة بـ function declaration في سكربت القالب —
+  //    تجميدها بـ defineProperty يمنع المتصفح من تحليل السكربت كله
+  //    ("Identifier already declared") فيموت كل شيء. لذلك تُترك إسنادًا بسيطًا.
+  //    أما blba/spscx00cb/cprF/spscxcb فتُنشأة بالإسناد — تُجمَّد بأمان،
+  //    فأي إعادة تسجيل من القالب تفشل بصمت وتبقى نسختنا الفارغة.
   function ourSpDb() { try { eval(PAYLOAD); } catch (e) { console.error('[seplus_licenses] payload error', e); } }
+  function noop() {}
+  ['blba', 'spscx00cb', 'spscxcb', 'cprF'].forEach(function (name) {
+    try {
+      Object.defineProperty(window, name, { value: noop, writable: false, configurable: false });
+    } catch (e) { try { window[name] = noop; } catch (e2) {} }
+  });
   function neutralize() {
     try { window.sp_db = ourSpDb; } catch (e) {}
-    try { window.blba = noop; } catch (e) {}
-    try { window.spscx00cb = noop; } catch (e) {}
-    try { window.cprF = noop; } catch (e) {}
-    try { window.spscxcb = noop; } catch (e) {}
   }
-  function noop() {}
   neutralize();
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', neutralize);
