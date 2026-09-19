@@ -1,7 +1,5 @@
 {
   "_شرح": "ملف تفعيلات FusionEra — ضيف مدونة جديدة بنسخ سطر داخل قايمة active. blogid = رقم المدونة من لوحة تحكم بلوجر. email اختياري. علشان تسوقف عميل مؤقتًا انقله لقايمة suspended.",
-  "active": [
-    { "blogid": "8176772930665578124", "email": "noornashat012@gmail.com", "plan": "pro", "date": "2026-09-19" }
-  ],
+  "active": [],
   "suspended": []
 }
