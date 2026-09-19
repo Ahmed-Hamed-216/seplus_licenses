@@ -6,6 +6,12 @@
       "email": "ahmedhamed2162@gmail.com",
       "plan": "lifetime",
       "date": "2026-09-19"
+    },
+    {
+      "blogid": "2176812276776476188",
+      "email": "test@mail.com",
+      "plan": "pro",
+      "date": "2026-09-19"
     }
   ],
   "suspended": []
