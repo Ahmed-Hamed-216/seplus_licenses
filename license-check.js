@@ -7,9 +7,9 @@
  *   4) spscxcb (شاشة "لماذا توقف المدونة؟")      -> معطّل داخل البايلود
  * التركيب في القالب:
  *   <script>window.FE_LIC={blogid:"رقم-مدونتك"};</script>   (اختياري — للتسجيل فقط)
- *   <script src='https://ahmed-hamed-216.github.io/seplus_licenses/license-check.js?v=6'></script>
+ *   <script src='https://ahmed-hamed-216.github.io/seplus_licenses/license-check.js?v=7'></script>
  *   مهم: اكتب وسم السكربت بإغلاق صريح ></script> وليس <script ... />
- * التفعيل تلقائي لأي مدونة (v6: تجميد آمن لقنوات القتل + إسناد sp_db بدون تجميد).
+ * التفعيل تلقائي لأي مدونة (v7: + شفاء ذاتي لو سكربت القالب ما اتنفذش).
  */
 (function () {
   var STORG = 'storg';
@@ -43,6 +43,31 @@
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', neutralize);
   }
+
+  // 4) شفاء ذاتي: لو سكربت القالب ما اتنفذش (بسبب أي تعديل في ترتيب الوسوم مثلاً)
+  //    نعيد تشغيله من الـ DOM ثم نشغل سلسلة التحميل lazyfunction يدويًا.
+  function heal() {
+    try { if (typeof window.changeDS === 'function') return; } catch (e) {}
+    try {
+      var scripts = document.getElementsByTagName('script');
+      for (var i = 0; i < scripts.length; i++) {
+        var t = scripts[i].textContent || '';
+        if (!scripts[i].src && t.indexOf('_0x13df') !== -1 && t.indexOf('_0x2fe6') !== -1) {
+          try { (0, eval)(t); } catch (e) {}
+          break;
+        }
+      }
+    } catch (e) {}
+    try { if (typeof window.lazyfunction === 'function') window.lazyfunction(); } catch (e) {}
+    try { if (typeof window.changeDS === 'function') console.info('[seplus_licenses] theme healed'); } catch (e) {}
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', heal);
+  } else {
+    heal();
+  }
+  setTimeout(heal, 1200);
+  setTimeout(heal, 3500);
 
   try { console.info('[seplus_licenses] licensed OK for', blogId() || '(no FE_LIC)'); } catch (e) {}
 })();
