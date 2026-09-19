@@ -7,9 +7,9 @@
  *   4) spscxcb (شاشة "لماذا توقف المدونة؟")      -> معطّل داخل البايلود
  * التركيب في القالب:
  *   <script>window.FE_LIC={blogid:"رقم-مدونتك"};</script>   (اختياري — للتسجيل فقط)
- *   <script src='https://ahmed-hamed-216.github.io/seplus_licenses/license-check.js?v=7'></script>
+ *   <script src='https://ahmed-hamed-216.github.io/seplus_licenses/license-check.js?v=8'></script>
  *   مهم: اكتب وسم السكربت بإغلاق صريح ></script> وليس <script ... />
- * التفعيل تلقائي لأي مدونة (v7: + شفاء ذاتي لو سكربت القالب ما اتنفذش).
+ * التفعيل تلقائي لأي مدونة (v8: علامة إصدار في الكونسول + شفاء ذاتي).
  */
 (function () {
   var STORG = 'storg';
@@ -69,5 +69,5 @@
   setTimeout(heal, 1200);
   setTimeout(heal, 3500);
 
-  try { console.info('[seplus_licenses] licensed OK for', blogId() || '(no FE_LIC)'); } catch (e) {}
+  try { console.info('[seplus_licenses] v8 active —', blogId() || '(no FE_LIC)'); } catch (e) {}
 })();
