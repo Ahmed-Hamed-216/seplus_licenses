@@ -15,7 +15,7 @@
   var cfg = window.FE_LIC || {};
   var DATA_URL  = 'https://ahmed-hamed-216.github.io/seplus_licenses/licenses.json';
   var FALLBACK  = 'https://cdn.jsdelivr.net/gh/Ahmed-Hamed-216/seplus_licenses@main/licenses.json';
-  var CACHE_HOURS = 6;
+  var CACHE_HOURS = 2;
 
   /* ---- BlogID ---- */
   var id = String(cfg.blogid || '');
@@ -26,10 +26,12 @@
   if (!id) return;
 
   /* ---- كاش محلي ---- */
+  var FORCE = /[?&]fe_lic=refresh/.test(location.search);
   var KEY = '_fe_lic_' + id;
   try {
     var c = JSON.parse(localStorage.getItem(KEY) || 'null');
-    if (c && (Date.now() - c.t) < CACHE_HOURS * 3600 * 1000) return render(c.d);
+    if (!FORCE && c && (Date.now() - c.t) < CACHE_HOURS * 3600 * 1000) return render(c.d);
+    if (FORCE) try { localStorage.removeItem(KEY); } catch (e) {}
   } catch (e) {}
 
   /* ---- جلب البيانات ---- */
