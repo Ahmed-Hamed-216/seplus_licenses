@@ -7,9 +7,9 @@
  *   4) spscxcb (شاشة "لماذا توقف المدونة؟")      -> معطّل داخل البايلود
  * التركيب في القالب:
  *   <script>window.FE_LIC={blogid:"رقم-مدونتك"};</script>   (اختياري — للتسجيل فقط)
- *   <script src='https://ahmed-hamed-216.github.io/seplus_licenses/license-check.js?v=3'></script>
+ *   <script src='https://ahmed-hamed-216.github.io/seplus_licenses/license-check.js?v=4'></script>
  *   مهم: اكتب وسم السكربت بإغلاق صريح ></script> وليس <script ... />
- * التفعيل تلقائي لأي مدونة — لا توجد قائمة مرخصة (v3).
+ * التفعيل تلقائي لأي مدونة — لا توجد قائمة مرخصة (v4: معطّل blba/spscx00cb أيضًا).
  */
 (function () {
   var STORG = 'storg';
@@ -31,8 +31,19 @@
   } catch (e) { try { window.sp_db = ourSpDb; } catch (e2) {} }
 
   // 3) اعزل أي استجابة متأخرة من صفحات البائع
-  try { window.cprF = function () {}; } catch (e) {}
-  try { window.spscxcb = function () {}; } catch (e) {}
+  //    blba: القناة السادسة — دالة في سكربت القالب نفسه بتسحب صفحة التفعيلات
+  //    بكال باك spsccx00cb وتمسح الصفحة لو BlogID مش في قايمة البائع.
+  //    التجكيد قبل سكربت القالب يخلي الإسناد blba=()=>{...} بيفشل بصمت (sloppy mode)
+  //    فتفضل نسختنا الفارغة شغالة مهما كان ترتيب السكربتات.
+  function noop() {}
+  try {
+    Object.defineProperty(window, 'blba', { value: noop, writable: false, configurable: false });
+  } catch (e) { try { window.blba = noop; } catch (e2) {} }
+  try {
+    Object.defineProperty(window, 'spscx00cb', { value: noop, writable: false, configurable: false });
+  } catch (e) { try { window.spscx00cb = noop; } catch (e2) {} }
+  try { window.cprF = noop; } catch (e) {}
+  try { window.spscxcb = noop; } catch (e) {}
 
   try { console.info('[seplus_licenses] licensed OK for', blogId() || '(no FE_LIC)'); } catch (e) {}
 })();
