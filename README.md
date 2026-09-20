@@ -22,8 +22,8 @@
 قبل `</body>` مباشرة (بعد سكربتات القالب):
 
 ```html
-<script>window.FE_LIC={blogid:"8176772930665578124"};</script>
-<script src='https://ahmed-hamed-216.github.io/seplus_licenses/license-check.js'></script>
+<script>window.FE_LIC={blogid:"2176812276776476188"};</script>
+<script src='https://ahmed-hamed-216.github.io/seplus_licenses/license-check.js?v=9'></script>
 ```
 
 ثم امسح الكاش/افتح بنافذة خاصة أول مرة (القالب يخزّن البايلود في sessionStorage).
